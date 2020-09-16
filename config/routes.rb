@@ -5,4 +5,5 @@ Rails.application.routes.draw do
   get "autologin", to: "users#auto_login"
 
   jsonapi_resources :tasks
+  jsonapi_resources :tags
 end
