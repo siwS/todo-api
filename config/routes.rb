@@ -4,6 +4,11 @@ Rails.application.routes.draw do
   post "login", to: "users#login"
   get "autologin", to: "users#auto_login"
 
-  jsonapi_resources :tasks
-  jsonapi_resources :tags
+  namespace :api do
+    namespace :v1 do
+      jsonapi_resources :tasks
+      jsonapi_resources :tags
+    end
+  end
+
 end
