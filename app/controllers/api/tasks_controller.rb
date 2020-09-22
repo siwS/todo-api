@@ -19,7 +19,7 @@ class Api::TasksController < ApplicationController
   private
 
   def create_tags_relationship_hash(tags_attribute)
-    tag_records = tags_attribute.map{ |tag| Tag.find_or_create_by(name: tag) }
+    tag_records = tags_attribute.map{ |tag| Tag.find_or_create_by(name: tag, user: logged_in_user) }
     json = tag_records.map { |tag| { type: "tags", id: tag.id } }
 
     {

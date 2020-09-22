@@ -1,8 +1,8 @@
-class CreateTasks < ActiveRecord::Migration[5.2]
+class CreateTasks < ActiveRecord::Migration[6.0]
   def change
-    create_table :tasks do |t|
+    create_table :tasks, id: :uuid do |t|
       t.string :title
-      t.references :user
+      t.references :user, type: :uuid
 
       t.timestamps
     end

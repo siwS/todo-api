@@ -1,7 +1,7 @@
 module JwtAuthenticatable
 
   def encode_token(payload)
-    JWT.encode(payload, 's3cr3t')
+    JWT.encode(payload, Rails.application.secrets.jwt_key)
   end
 
   # { Authorization: 'Bearer <token>' }
@@ -13,7 +13,7 @@ module JwtAuthenticatable
     if auth_header
       token = auth_header.split(' ')[1]
       begin
-        JWT.decode(token, 's3cr3t', true, algorithm: 'HS256')
+        JWT.decode(token, Rails.application.secrets.jwt_key, true, algorithm: 'HS256')
       rescue JWT::DecodeError
         nil
       end
