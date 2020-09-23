@@ -4,10 +4,10 @@ RSpec.describe "Tasks management" do
   let(:user) { create(:user, username: "test-user") }
   let(:bearer_token) { JWT.encode({ user_id: user.id }, Rails.application.secrets.jwt_key) }
 
-  let!(:task) { create(:task, user: user) }
-  let!(:tag) { create(:tag, user: user) }
+  let!(:task) { create(:task, title: "Pay Electricity bill", user: user) }
+  let!(:tag) { create(:tag, user: user, name: "Bills") }
 
-  let!(:task_does_not_belong_to_user) { create(:task, title: "Second User task") }
+  let!(:task_does_not_belong_to_user) { create(:task, title: "Maths assignment") }
 
   let(:headers) do
     {
@@ -18,7 +18,7 @@ RSpec.describe "Tasks management" do
 
   describe "#index" do
     it "checks for user authentication" do
-      get "/api/v1/tasks", :headers => { "Content-Type"  => "application/vnd.api+json" }
+      get "/api/v1/tasks", :headers => { "Content-Type" => "application/vnd.api+json" }
       expect(response).to have_http_status(:unauthorized)
     end
 
@@ -34,11 +34,54 @@ RSpec.describe "Tasks management" do
       expect(data.count).to eq(1)
       expect(data.first["id"]).to eq(task.id)
     end
+
+    context "pagination" do
+      let!(:tasks) { create_list(:task, 29, user: user) }
+
+      it "returns a paginated list of task results with default pagination size" do
+        get "/api/v1/tasks", :headers => headers
+        expect(response.body).to have_json_type(Array).at_path("data")
+
+        data = JSON.parse(response.body)["data"]
+        expect(data.count).to eq(20)
+
+        links = JSON.parse(response.body)["links"]
+        expect(URI.decode(links["first"])).to end_with("api/v1/tasks?page[number]=1&page[size]=20")
+        expect(URI.decode(links["last"])).to end_with("api/v1/tasks?page[number]=2&page[size]=20")
+        expect(URI.decode(links["next"])).to end_with("api/v1/tasks?page[number]=2&page[size]=20")
+      end
+
+      it "returns the second page of the task results with default pagination size" do
+        get "/api/v1/tasks?page[number]=2", :headers => headers
+        expect(response.body).to have_json_type(Array).at_path("data")
+
+        data = JSON.parse(response.body)["data"]
+        expect(data.count).to eq(10)
+
+        links = JSON.parse(response.body)["links"]
+        expect(URI.decode(links["first"])).to end_with("api/v1/tasks?page[number]=1&page[size]=20")
+        expect(URI.decode(links["last"])).to end_with("api/v1/tasks?page[number]=2&page[size]=20")
+        expect(links["next"]).to be_nil
+      end
+
+      it "accepts a parameter for page size" do
+        get "/api/v1/tasks?page[number]=2&page[size]=5", :headers => headers
+        expect(response.body).to have_json_type(Array).at_path("data")
+
+        data = JSON.parse(response.body)["data"]
+        expect(data.count).to eq(5)
+
+        links = JSON.parse(response.body)["links"]
+        expect(URI.decode(links["first"])).to end_with("api/v1/tasks?page[number]=1&page[size]=5")
+        expect(URI.decode(links["last"])).to end_with("api/v1/tasks?page[number]=6&page[size]=5")
+        expect(URI.decode(links["next"])).to end_with("api/v1/tasks?page[number]=3&page[size]=5")
+      end
+    end
   end
 
   describe "#show" do
     it "checks for user authentication" do
-      get "/api/v1/tasks/#{task.id}", :headers => { "Content-Type"  => "application/vnd.api+json" }
+      get "/api/v1/tasks/#{task.id}", :headers => { "Content-Type" => "application/vnd.api+json" }
       expect(response).to have_http_status(:unauthorized)
     end
 
@@ -58,6 +101,21 @@ RSpec.describe "Tasks management" do
     end
   end
 
+  describe "#relationships" do
+    it "gets the tags for a task" do
+      task.tags << tag
+      get "/api/v1/tasks/#{task.id}/relationships/tags", :headers => headers
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to have_json_type(Array).at_path("data")
+
+      data = JSON.parse(response.body)["data"]
+      expect(data.count).to eq(1)
+      expect(data.first["type"]).to eq("tags")
+      expect(data.first["id"]).to eq(tag.id)
+    end
+  end
+
   describe "#new" do
     let(:create_task_params) do
       {
@@ -71,7 +129,7 @@ RSpec.describe "Tasks management" do
     end
 
     it "checks for user authentication" do
-      post "/api/v1/tasks", :params => create_task_params.to_json,  :headers => { "Content-Type"  => "application/vnd.api+json" }
+      post "/api/v1/tasks", :params => create_task_params.to_json, :headers => { "Content-Type" => "application/vnd.api+json" }
       expect(response).to have_http_status(:unauthorized)
     end
 
@@ -129,18 +187,18 @@ RSpec.describe "Tasks management" do
     end
 
     it "checks for user authentication" do
-      patch "/api/v1/tasks/#{task.id}", :params => update_task_params.to_json, :headers => { "Content-Type"  => "application/vnd.api+json" }
+      patch "/api/v1/tasks/#{task.id}", :params => update_task_params.to_json, :headers => { "Content-Type" => "application/vnd.api+json" }
       expect(response).to have_http_status(:unauthorized)
     end
 
     it "does not allow updating another user's task" do
       patch "/api/v1/tasks/#{task_does_not_belong_to_user.id}", :params => update_task_params.to_json, :headers => headers
       expect(response).to have_http_status(:forbidden)
-      expect(task_does_not_belong_to_user.reload.title).to eq("Second User task")
+      expect(task_does_not_belong_to_user.reload.title).to eq("Maths assignment")
     end
 
     it "updates an existing task" do
-      expect(task.title).to eq("Laundry")
+      expect(task.title).to eq("Pay Electricity bill")
 
       expect do
         patch "/api/v1/tasks/#{task.id}", :params => update_task_params.to_json, :headers => headers
@@ -173,13 +231,13 @@ RSpec.describe "Tasks management" do
 
       expect(response).to have_http_status(:ok)
       assert_json_api_format_for_single_record(response)
-      expect(task.reload.tags.map(&:name)).to eq(["Tomorrow", "Bills"])
+      expect(task.reload.tags.map(&:name).sort).to eq(["Tomorrow", "Bills"].sort)
     end
   end
 
   describe "#delete" do
     it "checks for user authentication" do
-      delete "/api/v1/tasks/#{task.id}", :headers => { "Content-Type"  => "application/vnd.api+json" }
+      delete "/api/v1/tasks/#{task.id}", :headers => { "Content-Type" => "application/vnd.api+json" }
       expect(response).to have_http_status(:unauthorized)
     end
 

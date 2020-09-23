@@ -1,6 +1,6 @@
 FactoryBot.define do
   factory :task do
-    title { "Laundry" }
     user
+    sequence(:title) { |n| "task #{n}" }
   end
 end

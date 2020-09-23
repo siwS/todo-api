@@ -1,6 +1,6 @@
 FactoryBot.define do
   factory :tag do
-    name { "Bills" }
     user
+    sequence(:name) { |n| "tag #{n}" }
   end
 end

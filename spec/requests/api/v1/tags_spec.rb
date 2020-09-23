@@ -32,6 +32,49 @@ RSpec.describe "Tags management" do
       expect(data.count).to eq(1)
       expect(data.first["id"]).to eq(tag.id)
     end
+
+    context "pagination" do
+      let!(:tags) { create_list(:tag, 29, user: user) }
+
+      it "returns a paginated list of tags results" do
+        get "/api/v1/tags", :headers => headers
+        expect(response.body).to have_json_type(Array).at_path("data")
+
+        data = JSON.parse(response.body)["data"]
+        expect(data.count).to eq(20)
+
+        links = JSON.parse(response.body)["links"]
+        expect(URI.decode(links["first"])).to end_with("api/v1/tags?page[number]=1&page[size]=20")
+        expect(URI.decode(links["last"])).to end_with("api/v1/tags?page[number]=2&page[size]=20")
+        expect(URI.decode(links["next"])).to end_with("api/v1/tags?page[number]=2&page[size]=20")
+      end
+
+      it "returns the second page of the tags results" do
+        get "/api/v1/tags?page[number]=2", :headers => headers
+        expect(response.body).to have_json_type(Array).at_path("data")
+
+        data = JSON.parse(response.body)["data"]
+        expect(data.count).to eq(10)
+
+        links = JSON.parse(response.body)["links"]
+        expect(URI.decode(links["first"])).to end_with("api/v1/tags?page[number]=1&page[size]=20")
+        expect(URI.decode(links["last"])).to end_with("api/v1/tags?page[number]=2&page[size]=20")
+        expect(links["next"]).to be_nil
+      end
+
+      it "accepts a parameter for page size" do
+        get "/api/v1/tags?page[number]=2&page[size]=5", :headers => headers
+        expect(response.body).to have_json_type(Array).at_path("data")
+
+        data = JSON.parse(response.body)["data"]
+        expect(data.count).to eq(5)
+
+        links = JSON.parse(response.body)["links"]
+        expect(URI.decode(links["first"])).to end_with("api/v1/tags?page[number]=1&page[size]=5")
+        expect(URI.decode(links["last"])).to end_with("api/v1/tags?page[number]=6&page[size]=5")
+        expect(URI.decode(links["next"])).to end_with("api/v1/tags?page[number]=3&page[size]=5")
+      end
+    end
   end
 
   describe "#show" do
@@ -82,8 +125,8 @@ RSpec.describe "Tags management" do
       expect(response).to have_http_status(:created)
       assert_json_api_format_for_single_record(response)
 
-      expect(load_task_from_response(response).name).to eq("Someday")
-      expect(load_task_from_response(response).user).to eq(user)
+      expect(load_tag_from_response(response).name).to eq("Someday")
+      expect(load_tag_from_response(response).user).to eq(user)
     end
   end
 
@@ -113,8 +156,6 @@ RSpec.describe "Tags management" do
     end
 
     it "updates an existing tag" do
-      expect(tag.name).to eq("Bills")
-
       expect do
         patch "/api/v1/tags/#{tag.id}", :params => update_tag_params.to_json, :headers => headers
       end.not_to change { Tag.count }
@@ -155,7 +196,7 @@ RSpec.describe "Tags management" do
     end
   end
 
-  def load_task_from_response(response)
+  def load_tag_from_response(response)
     body = JSON.parse(response.body)
     Tag.find(body["data"]["id"])
   end
