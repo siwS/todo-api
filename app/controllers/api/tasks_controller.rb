@@ -1,6 +1,6 @@
 class Api::TasksController < ApplicationController
   before_action :filter_by_user, only: [:index]
-  before_action :ensure_belongs_to_user, only: [:update]
+  before_action :ensure_belongs_to_user, only: [:update, :destroy, :show]
   before_action :transform_tags_attribute_to_relationship, only: [:update]
 
   def ensure_belongs_to_user
