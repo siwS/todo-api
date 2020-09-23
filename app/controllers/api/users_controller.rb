@@ -1,7 +1,6 @@
 class Api::UsersController < ApplicationController
   before_action :authorized, only: [:auto_login]
 
-  # REGISTER
   def create
     @user = User.create(user_params)
     if @user.valid?
@@ -14,7 +13,6 @@ class Api::UsersController < ApplicationController
     render json: { error: "Username already taken" }, status: :forbidden
   end
 
-  # LOGIN
   def login
     @user = User.find_by(username: params[:username])
 

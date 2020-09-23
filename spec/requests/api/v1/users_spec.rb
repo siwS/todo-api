@@ -36,6 +36,7 @@ RSpec.describe "Users management" do
           post "/api/v1/users", params: new_user_params
         end.not_to change { User.count }
         expect(response).to have_http_status(:forbidden)
+        expect(response.body).to be_json_eql(%({"error": "Username already taken"}))
       end
     end
 
@@ -47,6 +48,7 @@ RSpec.describe "Users management" do
           post "/api/v1/users", params: new_user_params
         end.not_to change { User.count }
         expect(response).to have_http_status(:forbidden)
+        expect(response.body).to be_json_eql(%({"error": "Invalid username or password"}))
       end
     end
   end
@@ -74,6 +76,7 @@ RSpec.describe "Users management" do
       it "fails to log in the user" do
         post "/api/v1/login", params: login_params
         expect(response).to have_http_status(:unauthorized)
+        expect(response.body).to be_json_eql(%({"error": "Invalid username or password"}))
       end
     end
   end
