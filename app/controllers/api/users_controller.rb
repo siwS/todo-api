@@ -6,10 +6,12 @@ class Api::UsersController < ApplicationController
     @user = User.create(user_params)
     if @user.valid?
       token = encode_token({ user_id: @user.id })
-      render json: { user: @user, token: token }
+      render json: json_user_response(@user, token), status: :created
     else
-      render json: { error: "Invalid username or password" }
+      render json: { error: "Invalid username or password" }, status: :forbidden
     end
+  rescue ActiveRecord::RecordNotUnique
+    render json: { error: "Username already taken" }, status: :forbidden
   end
 
   # LOGIN
@@ -18,9 +20,9 @@ class Api::UsersController < ApplicationController
 
     if @user && @user.authenticate(params[:password])
       token = encode_token({ user_id: @user.id })
-      render json: { user: @user, token: token }
+      render json: json_user_response(@user, token)
     else
-      render json: { error: "Invalid username or password" }
+      render json: { error: "Invalid username or password" }, status: :unauthorized
     end
   end
 
@@ -29,6 +31,19 @@ class Api::UsersController < ApplicationController
   end
 
   private
+
+  def json_user_response(user, token)
+    {
+      data: {
+        id:         user.username,
+        type:       "users",
+        attributes: {
+          username: user.username,
+          token:    token
+        }
+      }
+    }
+  end
 
   def user_params
     params.permit(:username, :password)

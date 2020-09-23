@@ -163,7 +163,6 @@ RSpec.describe "Tags management" do
   def assert_json_api_format_for_single_record(response)
     expect(response.body).to have_json_path("data/id")
     expect(response.body).to have_json_path("data/type")
-    expect(response.body).to have_json_path("data/type")
     expect(response.body).to have_json_path("data/links")
     expect(response.body).to have_json_path("data/attributes")
   end
