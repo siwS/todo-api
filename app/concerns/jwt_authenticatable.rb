@@ -32,6 +32,8 @@ module JwtAuthenticatable
   end
 
   def authorized
-    render json: { message: 'Please log in' }, status: :unauthorized unless logged_in?
+    return if logged_in?
+    json = ::Error::Helpers::Render.json(:unauthorized, :unauthorized , "Please log in")
+    render json: json, status: :unauthorized
   end
 end

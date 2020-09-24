@@ -90,14 +90,19 @@ RSpec.describe "Tasks management" do
       expect(response).to have_http_status(:forbidden)
     end
 
-    it "does not allow showing another user's task" do
+    it "returns a task that belongs to user" do
       get "/api/v1/tasks/#{task.id}", :headers => headers
       expect(response).to have_http_status(:ok)
     end
 
-    it "returns the fields for a task" do
+    it "returns the fields for a task with correct values" do
       get "/api/v1/tasks/#{task.id}", :headers => headers
       assert_json_api_format_for_single_record(response)
+    end
+
+    it "handles not found errors" do
+      get "/api/v1/tasks/12c8490d-762d-4e0f-a858-ec2d10104a82", :headers => headers
+      expect(response).to have_http_status(:not_found)
     end
   end
 
@@ -209,7 +214,6 @@ RSpec.describe "Tasks management" do
       expect(task.reload.title).to eq("Updated Task Title")
     end
 
-
     it "updates an existing task and adds new tags" do
       expect(task.tags).to eq([])
 
@@ -232,6 +236,11 @@ RSpec.describe "Tasks management" do
       expect(response).to have_http_status(:ok)
       assert_json_api_format_for_single_record(response)
       expect(task.reload.tags.map(&:name).sort).to eq(["Tomorrow", "Bills"].sort)
+    end
+
+    it "handles not found errors" do
+      patch "/api/v1/tasks/12c8490d-762d-4e0f-a858-ec2d10104a82", :params => update_task_params_with_existing_tags.to_json, :headers => headers
+      expect(response).to have_http_status(:not_found)
     end
   end
 
@@ -259,6 +268,11 @@ RSpec.describe "Tasks management" do
       expect do
         delete "/api/v1/tasks/#{task.id}", :headers => headers
       end.to change { Tagging.count }.by(-1)
+    end
+
+    it "handles not found errors" do
+      delete "/api/v1/tasks/12c8490d-762d-4e0f-a858-ec2d10104a82", :headers => headers
+      expect(response).to have_http_status(:not_found)
     end
   end
 

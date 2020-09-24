@@ -1,6 +1,7 @@
 class ApplicationController < ActionController::Base
   include JSONAPI::ActsAsResourceController
   include ::JwtAuthenticatable
+  include ::Error::ErrorHandler
 
   before_action :authorized
 
@@ -11,5 +12,4 @@ class ApplicationController < ActionController::Base
   def context
     { user: logged_in_user }
   end
-
 end

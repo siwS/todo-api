@@ -97,6 +97,11 @@ RSpec.describe "Tags management" do
       get "/api/v1/tags/#{tag.id}", :headers => headers
       assert_json_api_format_for_single_record(response)
     end
+
+    it "handles not found errors" do
+      get "/api/v1/tags/12c8490d-762d-4e0f-a858-ec2d10104a82", :headers => headers
+      expect(response).to have_http_status(:not_found)
+    end
   end
 
   describe "#new" do
@@ -165,6 +170,10 @@ RSpec.describe "Tags management" do
       expect(tag.reload.name).to eq("Updated Tag Name")
     end
 
+    it "handles not found errors" do
+      patch "/api/v1/tags/12c8490d-762d-4e0f-a858-ec2d10104a82", :params => update_tag_params.to_json, :headers => headers
+      expect(response).to have_http_status(:not_found)
+    end
   end
 
   describe "#delete" do
@@ -193,6 +202,11 @@ RSpec.describe "Tags management" do
       expect do
         delete "/api/v1/tags/#{tag.id}", :headers => headers
       end.to change { Tagging.count }.by(-1)
+    end
+
+    it "handles not found errors" do
+      delete "/api/v1/tags/12c8490d-762d-4e0f-a858-ec2d10104a82", :headers => headers
+      expect(response).to have_http_status(:not_found)
     end
   end
 
