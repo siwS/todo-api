@@ -6,3 +6,7 @@ user = User.create!(username: 'test-user', password: 's3cUr8p@$$w0rD<>')
 30.times do |i|
   Task.create!(title: "title-#{i}", user: user)
 end
+
+30.times do |i|
+  Tag.create!(name: "name-#{i}", user: user)
+end

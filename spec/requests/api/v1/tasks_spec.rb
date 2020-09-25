@@ -119,6 +119,26 @@ RSpec.describe "Tasks management" do
       expect(data.first["type"]).to eq("tags")
       expect(data.first["id"]).to eq(tag.id)
     end
+
+    context "paginated tags" do
+      let(:tags) { create_list(:tag, 29, user: user) }
+
+      it "returns the list of tags paginated" do
+        task.tags << tags
+        get "/api/v1/tasks/#{task.id}/tags", :headers => headers
+
+        expect(response).to have_http_status(:ok)
+        expect(response.body).to have_json_type(Array).at_path("data")
+
+        response_json = JSON.parse(response.body)
+        expect(response_json["data"].count).to eq(20)
+
+        links = JSON.parse(response.body)["links"]
+        expect(URI.decode(links["first"])).to end_with("api/v1/tasks/#{task.id}/tags?page[number]=1&page[size]=20")
+        expect(URI.decode(links["last"])).to end_with("api/v1/tasks/#{task.id}/tags?page[number]=2&page[size]=20")
+        expect(URI.decode(links["next"])).to end_with("api/v1/tasks/#{task.id}/tags?page[number]=2&page[size]=20")
+      end
+    end
   end
 
   describe "#new" do
@@ -191,6 +211,19 @@ RSpec.describe "Tasks management" do
       }
     end
 
+    let(:update_task_params_without_tags) do
+      {
+        "data": {
+          "type":       "tasks",
+          "id":         task.id,
+
+          "attributes": {
+            "tags": []
+          }
+        }
+      }
+    end
+
     it "checks for user authentication" do
       patch "/api/v1/tasks/#{task.id}", :params => update_task_params.to_json, :headers => { "Content-Type" => "application/vnd.api+json" }
       expect(response).to have_http_status(:unauthorized)
@@ -236,6 +269,18 @@ RSpec.describe "Tasks management" do
       expect(response).to have_http_status(:ok)
       assert_json_api_format_for_single_record(response)
       expect(task.reload.tags.map(&:name).sort).to eq(["Tomorrow", "Bills"].sort)
+    end
+
+    it "deletes taggings if empty array is passed" do
+      task.tags << tag
+
+      expect do
+        patch "/api/v1/tasks/#{task.id}", :params => update_task_params_without_tags.to_json, :headers => headers
+      end.to change { Tagging.count }.by(1)
+
+      expect(response).to have_http_status(:ok)
+      assert_json_api_format_for_single_record(response)
+      expect(task.reload.tags.map(&:name)).to eq([])
     end
 
     it "handles not found errors" do

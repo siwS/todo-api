@@ -11,7 +11,7 @@ class Api::TasksController < ApplicationController
   # Backwards support for tags as attributes.
   def transform_tags_attribute_to_relationship
     tags_attribute = params["data"]["attributes"]["tags"]
-    return unless tags_attribute.present?
+    return if tags_attribute.nil?
 
     params["data"]["relationships"] = ::Api::ParametersService.create_tags_relationship(tags_attribute, logged_in_user)
     params["data"]["attributes"].delete("tags")

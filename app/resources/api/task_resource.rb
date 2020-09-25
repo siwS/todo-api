@@ -4,7 +4,7 @@ class Api::TaskResource < JSONAPI::Resource
 
   filter :user_id
 
-  has_many :tags
+  has_many :tags, acts_as_set: true
 
   before_create :set_user_from_context
 
