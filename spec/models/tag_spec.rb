@@ -8,18 +8,27 @@ RSpec.describe Tag, type: :model do
   let!(:task_1) { create(:task, title: "Electricity bill")}
   let!(:task_2) { create(:task, title: "Internet bill")}
 
-  it "destroys dependent taggings when tag is deleted" do
-    task_1.tags << [tag_1, tag_2]
-    task_2.tags << [tag_1]
+  describe "creation" do
+    it "has a UUID as primary key" do
+      expect(tag_1.id.length).to eq(36)
+      expect(tag_1.id).to match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i)
+    end
+  end
 
-    expect(Tagging.all.count).to eq(3)
-    expect(Tag.all.count).to eq(2)
+  describe "deletion" do
+    it "destroys dependent taggings when tag is deleted" do
+      task_1.tags << [tag_1, tag_2]
+      task_2.tags << [tag_1]
 
-    tag_1.destroy!
+      expect(Tagging.all.count).to eq(3)
+      expect(Tag.all.count).to eq(2)
 
-    expect(Tagging.all.count).to eq(1)
-    expect(Tag.all.count).to eq(1)
-    expect(task_1.tags.count).to eq(1)
-    expect(task_2.tags.count).to eq(0)
+      tag_1.destroy!
+
+      expect(Tagging.all.count).to eq(1)
+      expect(Tag.all.count).to eq(1)
+      expect(task_1.tags.count).to eq(1)
+      expect(task_2.tags.count).to eq(0)
+    end
   end
 end
