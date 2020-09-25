@@ -24,16 +24,61 @@ TODO list functionality
 GET http://localhost:3000/api/v1/tasks
 2. Create a task for authenticated user
 POST http://localhost:3000/api/v1/tasks
-3. Update a task for authenticated user
-PATCH http://localhost:3000/api/v1/tasks/1
-4. Delete a task for authenticated user
-DELETE http://localhost:3000/api/v1/tasks/2
-4. Get all tags for authenticated user
+```
+{"data":
+	{	"type":"tasks",
+		"attributes":{
+			"title":"Do Homework"
+		}
+	}
+}
+```
+
+3. Get a single task for authenticated user
+GET http://localhost:3000/api/v1/tasks/12c8490d-762d-4e0f-a858-ec2d10104a82
+4. Update a task for authenticated user
+PATCH http://localhost:3000/api/v1/tasks/12c8490d-762d-4e0f-a858-ec2d10104a82
+```
+{"data":
+ 	{	"type":"tasks",
+ 		"id":"12c8490d-762d-4e0f-a858-ec2d10104a82",
+ 		
+ 		"attributes":{
+ 			"title":"Updated Task Title",
+ 			"tags": ["Home", "Tomorrow"]
+ 		}
+ 	}
+ }
+```
+5. Delete a task for authenticated user
+DELETE http://localhost:3000/api/v1/tasks/12c8490d-762d-4e0f-a858-ec2d10104a82
+6. Get all tags for authenticated user
 GET http://localhost:3000/api/v1/tags
-5. Create a tag for authenticated user
+7. Create a tag for authenticated user
 POST http://localhost:3000/api/v1/tags
-6. Update a tag for authenticated user
-PATCH http://localhost:3000/api/v1/tags/1
+```
+{"data":
+	{	"type":"tags",
+		"attributes":{
+			"name":"Someday"
+		}
+	}
+}
+```
+8. Update a tag for authenticated user
+PATCH http://localhost:3000/api/v1/tags/12c8490d-762d-4e0f-a858-ec2d10104a82
+```
+{"data":
+	{	"type":"tags",
+ 		"id":"12c8490d-762d-4e0f-a858-ec2d10104a82",
+		"attributes":{
+			"name":"Updated Tag Name"
+		}
+	}
+}
+```
+9. Delete a tag for authenticated user
+DELETE http://localhost:3000/api/v1/tags/12c8490d-762d-4e0f-a858-ec2d10104a82
 
 ## How to run
 
