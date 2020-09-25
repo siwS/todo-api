@@ -83,19 +83,21 @@ RSpec.describe "Tags management" do
       expect(response).to have_http_status(:unauthorized)
     end
 
-    it "does not allow showing another user's task" do
+    it "does not allow showing another user's tag" do
       get "/api/v1/tags/#{tag_does_not_belong_to_user.id}", :headers => headers
       expect(response).to have_http_status(:forbidden)
     end
 
-    it "does not allow showing another user's task" do
+    it "does not allow showing another user's tag" do
       get "/api/v1/tags/#{tag.id}", :headers => headers
       expect(response).to have_http_status(:ok)
     end
 
-    it "returns the fields for a task" do
+    it "returns the fields for a tag" do
       get "/api/v1/tags/#{tag.id}", :headers => headers
       assert_json_api_format_for_single_record(response)
+      attributes = JSON.parse(response.body)["data"]["attributes"]
+      expect(attributes["name"]).to eq(tag.name)
     end
 
     it "handles not found errors" do
@@ -202,6 +204,7 @@ RSpec.describe "Tags management" do
       expect do
         delete "/api/v1/tags/#{tag.id}", :headers => headers
       end.to change { Tagging.count }.by(-1)
+      expect(task.reload.tags).to eq([])
     end
 
     it "handles not found errors" do

@@ -1,5 +1,5 @@
 class Api::TaskResource < JSONAPI::Resource
-  attributes :title
+  attributes :title, :created_at
   key_type :uuid
 
   filter :user_id

@@ -98,6 +98,9 @@ RSpec.describe "Tasks management" do
     it "returns the fields for a task with correct values" do
       get "/api/v1/tasks/#{task.id}", :headers => headers
       assert_json_api_format_for_single_record(response)
+      attributes = JSON.parse(response.body)["data"]["attributes"]
+      expect(attributes["title"]).to eq(task.title)
+      expect(attributes["created-at"]).to eq(task.created_at.strftime("%FT%T.%LZ"))
     end
 
     it "handles not found errors" do
@@ -276,7 +279,7 @@ RSpec.describe "Tasks management" do
 
       expect do
         patch "/api/v1/tasks/#{task.id}", :params => update_task_params_without_tags.to_json, :headers => headers
-      end.to change { Tagging.count }.by(1)
+      end.to change { Tagging.count }.by(-1)
 
       expect(response).to have_http_status(:ok)
       assert_json_api_format_for_single_record(response)
