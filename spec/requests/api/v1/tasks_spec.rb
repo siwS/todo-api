@@ -109,41 +109,6 @@ RSpec.describe "Tasks management" do
     end
   end
 
-  describe "#relationships" do
-    it "gets the tags for a task" do
-      task.tags << tag
-      get "/api/v1/tasks/#{task.id}/relationships/tags", :headers => headers
-
-      expect(response).to have_http_status(:ok)
-      expect(response.body).to have_json_type(Array).at_path("data")
-
-      data = JSON.parse(response.body)["data"]
-      expect(data.count).to eq(1)
-      expect(data.first["type"]).to eq("tags")
-      expect(data.first["id"]).to eq(tag.id)
-    end
-
-    context "paginated tags" do
-      let(:tags) { create_list(:tag, 29, user: user) }
-
-      it "returns the list of tags paginated" do
-        task.tags << tags
-        get "/api/v1/tasks/#{task.id}/tags", :headers => headers
-
-        expect(response).to have_http_status(:ok)
-        expect(response.body).to have_json_type(Array).at_path("data")
-
-        response_json = JSON.parse(response.body)
-        expect(response_json["data"].count).to eq(20)
-
-        links = JSON.parse(response.body)["links"]
-        expect(URI.decode(links["first"])).to end_with("api/v1/tasks/#{task.id}/tags?page[number]=1&page[size]=20")
-        expect(URI.decode(links["last"])).to end_with("api/v1/tasks/#{task.id}/tags?page[number]=2&page[size]=20")
-        expect(URI.decode(links["next"])).to end_with("api/v1/tasks/#{task.id}/tags?page[number]=2&page[size]=20")
-      end
-    end
-  end
-
   describe "#new" do
     let(:create_task_params) do
       {
@@ -324,6 +289,30 @@ RSpec.describe "Tasks management" do
     end
   end
 
+  describe "validations" do
+    let(:params_invalid) do
+      {
+        "data": {
+          "type":       "tasks",
+          "id":         task.id,
+
+          "attributes": {
+            "title": "",
+            "tags": ["New Tag"]
+          }
+        }
+      }
+    end
+
+    it "fails when title is not populated" do
+      expect do
+        put "/api/v1/tasks/#{task.id}", :params => params_invalid.to_json, :headers => headers
+      end.not_to change { Tag.count }
+      expect(response.status).to be(422)
+      expect(task.reload.tags.count).to be(0)
+    end
+  end
+
   def load_task_from_response(response)
     body = JSON.parse(response.body)
     Task.find(body["data"]["id"])
@@ -334,6 +323,5 @@ RSpec.describe "Tasks management" do
     expect(response.body).to have_json_path("data/type")
     expect(response.body).to have_json_path("data/links")
     expect(response.body).to have_json_path("data/attributes")
-    expect(response.body).to have_json_path("data/relationships")
   end
 end
